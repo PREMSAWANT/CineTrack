@@ -1,41 +1,48 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ page import="jakarta.persistence.EntityManagerFactory, jakarta.persistence.EntityManager, jakarta.persistence.Persistence" %>
 <%
     Integer movieCount = (Integer) request.getAttribute("movieCount");
     Integer genreCount = (Integer) request.getAttribute("genreCount");
     Integer directorCount = (Integer) request.getAttribute("directorCount");
     Integer actorCount = (Integer) request.getAttribute("actorCount");
 
-    // Dynamic live count if accessed directly without controller
+    // Fetch live record counts directly from the database
     if (movieCount == null || genreCount == null || directorCount == null || actorCount == null) {
+        EntityManagerFactory emf = null;
+        EntityManager em = null;
         try {
-            org.springframework.web.context.WebApplicationContext ctx =
-                org.springframework.web.context.support.WebApplicationContextUtils.getWebApplicationContext(application);
-            if (ctx != null) {
-                if (genreCount == null) {
-                    com.movie.service.GenreService gs = ctx.getBean(com.movie.service.GenreService.class);
-                    genreCount = gs != null ? gs.getAllGenres().size() : 0;
-                }
-                if (movieCount == null) {
-                    com.movie.service.MovieService ms = ctx.getBean(com.movie.service.MovieService.class);
-                    movieCount = ms != null ? ms.getAllMovies().size() : 0;
-                }
-                if (directorCount == null) {
-                    com.movie.service.DirectorService ds = ctx.getBean(com.movie.service.DirectorService.class);
-                    directorCount = ds != null ? ds.getAllDirectors().size() : 0;
-                }
-                if (actorCount == null) {
-                    com.movie.service.ActorService as = ctx.getBean(com.movie.service.ActorService.class);
-                    actorCount = as != null ? as.getAllActors().size() : 0;
-                }
+            emf = Persistence.createEntityManagerFactory("cinetrack");
+            em = emf.createEntityManager();
+
+            if (genreCount == null) {
+                Number count = (Number) em.createQuery("select count(g) from Genre g").getSingleResult();
+                genreCount = count != null ? count.intValue() : 0;
+            }
+            if (movieCount == null) {
+                Number count = (Number) em.createQuery("select count(m) from Movie m").getSingleResult();
+                movieCount = count != null ? count.intValue() : 0;
+            }
+            if (directorCount == null) {
+                Number count = (Number) em.createQuery("select count(d) from Director d").getSingleResult();
+                directorCount = count != null ? count.intValue() : 0;
+            }
+            if (actorCount == null) {
+                Number count = (Number) em.createQuery("select count(a) from Actor a").getSingleResult();
+                actorCount = count != null ? count.intValue() : 0;
             }
         } catch (Exception e) {
-            if (genreCount == null) genreCount = 0;
-            if (movieCount == null) movieCount = 0;
-            if (directorCount == null) directorCount = 0;
-            if (actorCount == null) actorCount = 0;
+            // Keep default values if database is unreachable
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+            if (emf != null && emf.isOpen()) {
+                emf.close();
+            }
         }
     }
+
     if (genreCount == null) genreCount = 0;
     if (movieCount == null) movieCount = 0;
     if (directorCount == null) directorCount = 0;
