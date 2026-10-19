@@ -1,5 +1,46 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%
+    Integer movieCount = (Integer) request.getAttribute("movieCount");
+    Integer genreCount = (Integer) request.getAttribute("genreCount");
+    Integer directorCount = (Integer) request.getAttribute("directorCount");
+    Integer actorCount = (Integer) request.getAttribute("actorCount");
+
+    // Dynamic live count if accessed directly without controller
+    if (movieCount == null || genreCount == null || directorCount == null || actorCount == null) {
+        try {
+            org.springframework.web.context.WebApplicationContext ctx =
+                org.springframework.web.context.support.WebApplicationContextUtils.getWebApplicationContext(application);
+            if (ctx != null) {
+                if (genreCount == null) {
+                    com.movie.service.GenreService gs = ctx.getBean(com.movie.service.GenreService.class);
+                    genreCount = gs != null ? gs.getAllGenres().size() : 0;
+                }
+                if (movieCount == null) {
+                    com.movie.service.MovieService ms = ctx.getBean(com.movie.service.MovieService.class);
+                    movieCount = ms != null ? ms.getAllMovies().size() : 0;
+                }
+                if (directorCount == null) {
+                    com.movie.service.DirectorService ds = ctx.getBean(com.movie.service.DirectorService.class);
+                    directorCount = ds != null ? ds.getAllDirectors().size() : 0;
+                }
+                if (actorCount == null) {
+                    com.movie.service.ActorService as = ctx.getBean(com.movie.service.ActorService.class);
+                    actorCount = as != null ? as.getAllActors().size() : 0;
+                }
+            }
+        } catch (Exception e) {
+            if (genreCount == null) genreCount = 0;
+            if (movieCount == null) movieCount = 0;
+            if (directorCount == null) directorCount = 0;
+            if (actorCount == null) actorCount = 0;
+        }
+    }
+    if (genreCount == null) genreCount = 0;
+    if (movieCount == null) movieCount = 0;
+    if (directorCount == null) directorCount = 0;
+    if (actorCount == null) actorCount = 0;
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -327,7 +368,7 @@
 
         .stat-value {
             font-family: var(--font-heading);
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 700;
             color: var(--wine-dark);
             letter-spacing: -0.5px;
@@ -357,7 +398,7 @@
             text-decoration: underline;
         }
 
-        /* Modules & Quick Actions Section */
+        /* Modules Section */
         .section-header {
             display: flex;
             align-items: center;
@@ -374,7 +415,7 @@
 
         .modules-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 1.25rem;
         }
 
@@ -425,45 +466,11 @@
             line-height: 1.5;
         }
 
-        /* Genre Tags showcase */
-        .genres-panel {
-            background-color: var(--bg-card);
-            border: 1px solid var(--wine-border);
-            border-radius: var(--radius-md);
-            padding: 1.5rem;
-            box-shadow: var(--shadow-soft);
-        }
-
-        .genre-tags {
+        .module-buttons {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.6rem;
-            margin-top: 1rem;
+            gap: 0.5rem;
         }
 
-        .genre-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            background-color: var(--wine-soft);
-            color: var(--wine-dark);
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 0.45rem 1rem;
-            border-radius: 30px;
-            border: 1px solid var(--wine-border);
-            transition: var(--transition);
-            text-decoration: none;
-        }
-
-        .genre-pill:hover {
-            background-color: var(--wine-primary);
-            color: #FFFFFF;
-            border-color: var(--wine-primary);
-            transform: translateY(-2px);
-        }
-
-        /* Footer */
         .footer {
             background-color: #FFFFFF;
             border-top: 1px solid var(--wine-border);
@@ -496,16 +503,16 @@
             <nav>
                 <ul class="nav-links">
                     <li><a href="index.jsp" class="nav-link active">Dashboard</a></li>
-                    <li><a href="displayGenre" class="nav-link">Genres</a></li>
-                    <li><a href="#movies" class="nav-link">Movies</a></li>
-                    <li><a href="#directors" class="nav-link">Directors</a></li>
-                    <li><a href="#actors" class="nav-link">Actors</a></li>
+                    <li><a href="viewGenres" class="nav-link">Genres</a></li>
+                    <li><a href="viewMovies" class="nav-link">Movies</a></li>
+                    <li><a href="viewDirectors" class="nav-link">Directors</a></li>
+                    <li><a href="viewActors" class="nav-link">Actors</a></li>
                 </ul>
             </nav>
 
             <div class="nav-actions">
-                <a href="displayGenre" class="btn btn-wine">
-                    <span>+ Add Genre</span>
+                <a href="displayMovie" class="btn btn-wine">
+                    <span>+ Add Movie</span>
                 </a>
             </div>
         </div>
@@ -518,39 +525,39 @@
         <section class="hero-banner">
             <div class="hero-text">
                 <h1>Cinema Hub &amp; Dashboard</h1>
-                <p>Welcome to CineTrack. Effortlessly manage your movie database, curate film genres, track directors, and connect star cast.</p>
+                <p>Manage your entire movie universe. Curate film genres, register directors, connect star actors, and track cinematic masterpieces.</p>
                 <div class="hero-buttons">
-                    <a href="displayGenre" class="btn-hero-primary">Go to Add Genre</a>
-                    <a href="addGenre.jsp" class="btn-hero-secondary">Direct JSP Page</a>
+                    <a href="viewMovies" class="btn-hero-primary">🎬 View All Movies</a>
+                    <a href="viewGenres" class="btn-hero-secondary">🏷️ View All Genres</a>
                 </div>
             </div>
         </section>
 
-        <!-- Stats Overview Cards -->
+        <!-- Live Database Stats Grid -->
         <section class="stats-grid">
             <!-- Genre Stat -->
             <div class="stat-card">
                 <div class="stat-header">
-                    <span class="stat-title">Active Genres</span>
+                    <span class="stat-title">Film Genres</span>
                     <div class="stat-icon">🏷️</div>
                 </div>
-                <div class="stat-value">14</div>
+                <div class="stat-value"><%= genreCount %></div>
                 <div class="stat-footer">
-                    <span>Configured in DB</span>
-                    <a href="displayGenre">Add Genre &rarr;</a>
+                    <span>Live in database</span>
+                    <a href="viewGenres">View List &rarr;</a>
                 </div>
             </div>
 
             <!-- Movies Stat -->
             <div class="stat-card">
                 <div class="stat-header">
-                    <span class="stat-title">Total Movies</span>
+                    <span class="stat-title">Feature Films</span>
                     <div class="stat-icon">🎬</div>
                 </div>
-                <div class="stat-value">128</div>
+                <div class="stat-value"><%= movieCount %></div>
                 <div class="stat-footer">
-                    <span>Cataloged titles</span>
-                    <a href="#movies">View List &rarr;</a>
+                    <span>Live in database</span>
+                    <a href="viewMovies">View List &rarr;</a>
                 </div>
             </div>
 
@@ -560,23 +567,23 @@
                     <span class="stat-title">Directors</span>
                     <div class="stat-icon">🎥</div>
                 </div>
-                <div class="stat-value">46</div>
+                <div class="stat-value"><%= directorCount %></div>
                 <div class="stat-footer">
-                    <span>Filmmakers</span>
-                    <a href="#directors">Explore &rarr;</a>
+                    <span>Live in database</span>
+                    <a href="viewDirectors">View List &rarr;</a>
                 </div>
             </div>
 
             <!-- Actors Stat -->
             <div class="stat-card">
                 <div class="stat-header">
-                    <span class="stat-title">Cast & Actors</span>
+                    <span class="stat-title">Star Cast</span>
                     <div class="stat-icon">🎭</div>
                 </div>
-                <div class="stat-value">312</div>
+                <div class="stat-value"><%= actorCount %></div>
                 <div class="stat-footer">
-                    <span>Featured talents</span>
-                    <a href="#actors">Cast Directory &rarr;</a>
+                    <span>Live in database</span>
+                    <a href="viewActors">View List &rarr;</a>
                 </div>
             </div>
         </section>
@@ -584,65 +591,60 @@
         <!-- Modules Grid -->
         <section>
             <div class="section-header">
-                <h2 class="section-title">Quick Actions</h2>
+                <h2 class="section-title">Quick Management Actions</h2>
             </div>
             <div class="modules-grid">
                 <!-- Genre Module Card -->
                 <div class="module-card">
                     <div class="module-top">
-                        <span class="module-badge">Active Entity</span>
-                        <h3>Genre Management</h3>
-                        <p>Define new film categories and tag movie releases with their corresponding genres.</p>
+                        <span class="module-badge">Classification</span>
+                        <h3>Genres</h3>
+                        <p>Create and categorize film genres (e.g. Action, Sci-Fi, Drama).</p>
                     </div>
-                    <a href="displayGenre" class="btn btn-wine" style="width: 100%; justify-content: center;">
-                        Open Add Genre Form
-                    </a>
+                    <div class="module-buttons">
+                        <a href="displayGenre" class="btn btn-wine" style="flex: 1; justify-content: center;">+ Add</a>
+                        <a href="viewGenres" class="btn btn-outline" style="flex: 1; justify-content: center;">View All</a>
+                    </div>
                 </div>
 
                 <!-- Movie Module Card -->
                 <div class="module-card">
                     <div class="module-top">
-                        <span class="module-badge">Catalog</span>
-                        <h3>Film Production</h3>
-                        <p>Register new releases, associate them with directors, and assign genres and cast lists.</p>
+                        <span class="module-badge">Production</span>
+                        <h3>Movies</h3>
+                        <p>Catalog new releases, runtimes, critic ratings, and languages.</p>
                     </div>
-                    <a href="#movies" class="btn btn-outline" style="width: 100%; justify-content: center;">
-                        Manage Movies
-                    </a>
+                    <div class="module-buttons">
+                        <a href="displayMovie" class="btn btn-wine" style="flex: 1; justify-content: center;">+ Add</a>
+                        <a href="viewMovies" class="btn btn-outline" style="flex: 1; justify-content: center;">View All</a>
+                    </div>
                 </div>
 
-                <!-- Cast & Crew Card -->
+                <!-- Director Module Card -->
                 <div class="module-card">
                     <div class="module-top">
-                        <span class="module-badge">Cast & Crew</span>
-                        <h3>Directors & Actors</h3>
-                        <p>Maintain filmmaker profiles and cast member associations across the cinematic library.</p>
+                        <span class="module-badge">Filmmakers</span>
+                        <h3>Directors</h3>
+                        <p>Add visionary directors and attach them to cinema projects.</p>
                     </div>
-                    <a href="#cast" class="btn btn-outline" style="width: 100%; justify-content: center;">
-                        Manage Cast
-                    </a>
+                    <div class="module-buttons">
+                        <a href="displayDirector" class="btn btn-wine" style="flex: 1; justify-content: center;">+ Add</a>
+                        <a href="viewDirectors" class="btn btn-outline" style="flex: 1; justify-content: center;">View All</a>
+                    </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Curated Genres Showcase -->
-        <section class="genres-panel">
-            <h3 style="font-family: var(--font-heading); color: var(--wine-dark); font-size: 1.15rem; font-weight: 700;">
-                Popular Film Genres
-            </h3>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
-                Browse standard film genres or create custom categories for your collection.
-            </p>
-            <div class="genre-tags">
-                <a href="displayGenre" class="genre-pill">⚡ Action</a>
-                <a href="displayGenre" class="genre-pill">🎭 Drama</a>
-                <a href="displayGenre" class="genre-pill">🔍 Mystery</a>
-                <a href="displayGenre" class="genre-pill">🚀 Sci-Fi</a>
-                <a href="displayGenre" class="genre-pill">❤️ Romance</a>
-                <a href="displayGenre" class="genre-pill">🔪 Thriller</a>
-                <a href="displayGenre" class="genre-pill">😂 Comedy</a>
-                <a href="displayGenre" class="genre-pill">📜 Historical</a>
-                <a href="displayGenre" class="genre-pill">+ Add New Genre</a>
+                <!-- Actor Module Card -->
+                <div class="module-card">
+                    <div class="module-top">
+                        <span class="module-badge">Talent</span>
+                        <h3>Actors</h3>
+                        <p>Manage cast talent profiles, nationality, and film appearances.</p>
+                    </div>
+                    <div class="module-buttons">
+                        <a href="displayActor" class="btn btn-wine" style="flex: 1; justify-content: center;">+ Add</a>
+                        <a href="viewActors" class="btn btn-outline" style="flex: 1; justify-content: center;">View All</a>
+                    </div>
+                </div>
             </div>
         </section>
 

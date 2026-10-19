@@ -1,5 +1,7 @@
 package com.movie.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,5 +19,24 @@ public class GenreService {
 		return genreDao.createGenre(genre);
 	}
 
-}
+	/* call method --> getAllGenres() */
+	public List<Genre> getAllGenres() {
+		return genreDao.getAllGenres();
+	}
 
+	/* call method --> getGenreById(int genreId) */
+	public Genre getGenreById(int genreId) {
+		return genreDao.getGenreById(genreId);
+	}
+
+	/* call method --> updateGenre(Genre genre) */
+	public Genre updateGenre(Genre genre) {
+		return genreDao.updateGenre(genre);
+	}
+
+	/* call method --> deleteGenre(int genreId) */
+	public boolean deleteGenre(int genreId) {
+		return genreDao.deleteGenre(genreId);
+	}
+
+}
