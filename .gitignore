@@ -1,0 +1,9 @@
+target/
+*.class
+*.log
+*.war
+*.ear
+
+# OS files
+.DS_Store
+Thumbs.db
