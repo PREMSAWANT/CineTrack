@@ -6,103 +6,123 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import com.movie.entity.Genre;
+import com.movie.exception.DataPersistenceException;
 
 @Repository
 public class GenreDao {
+
+	private static final Logger log = LoggerFactory.getLogger(GenreDao.class);
 
 	@Autowired
 	private EntityManagerFactory entityManagerFactory;
 
 	/* create method --> insert genre table --> persist(Object Entity) */
 	public Genre createGenre(Genre genre) {
-		EntityManager entityManager = entityManagerFactory.createEntityManager();
-		EntityTransaction transaction = entityManager.getTransaction();
+		EntityManager em = entityManagerFactory.createEntityManager();
+		EntityTransaction tx = em.getTransaction();
 		try {
-			transaction.begin();
-			entityManager.persist(genre);
-			transaction.commit();
+			tx.begin();
+			em.persist(genre);
+			tx.commit();
+			log.info("Genre saved successfully with id: {}", genre.getGenreId());
 			return genre;
 		} catch (Exception e) {
-			/* rollback transaction on any persistence error */
-			if (transaction.isActive()) {
-				transaction.rollback();
-			}
-			throw new RuntimeException("Failed to save genre: " + e.getMessage(), e);
+			if (tx.isActive()) tx.rollback();
+			log.error("Failed to save genre [name={}]: {}", genre.getGenreName(), e.getMessage(), e);
+			throw new DataPersistenceException("Failed to save genre", e);
 		} finally {
-			entityManager.close();
+			em.close();
 		}
 	}
 
 	/* fetch all method --> get all genre list --> createQuery() */
 	public List<Genre> getAllGenres() {
-		EntityManager entityManager = entityManagerFactory.createEntityManager();
+		EntityManager em = entityManagerFactory.createEntityManager();
 		try {
-			return entityManager.createQuery("select g from Genre g", Genre.class).getResultList();
+			log.debug("Fetching all genres");
+			return em.createQuery("select g from Genre g", Genre.class).getResultList();
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to fetch genres: " + e.getMessage(), e);
+			log.error("Failed to fetch genres: {}", e.getMessage(), e);
+			throw new DataPersistenceException("Failed to fetch genres", e);
 		} finally {
-			entityManager.close();
+			em.close();
 		}
 	}
 
 	/* find method --> get genre by id --> find(Class, id) */
 	public Genre getGenreById(int genreId) {
-		EntityManager entityManager = entityManagerFactory.createEntityManager();
+		EntityManager em = entityManagerFactory.createEntityManager();
 		try {
-			return entityManager.find(Genre.class, genreId);
+			log.debug("Looking up Genre with id: {}", genreId);
+			return em.find(Genre.class, genreId);
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to find genre with id " + genreId + ": " + e.getMessage(), e);
+			log.error("Failed to find genre [id={}]: {}", genreId, e.getMessage(), e);
+			throw new DataPersistenceException("Failed to find genre with id " + genreId, e);
 		} finally {
-			entityManager.close();
+			em.close();
 		}
 	}
 
 	/* update method --> update genre table --> merge(Object Entity) */
 	public Genre updateGenre(Genre genre) {
-		EntityManager entityManager = entityManagerFactory.createEntityManager();
-		EntityTransaction transaction = entityManager.getTransaction();
+		EntityManager em = entityManagerFactory.createEntityManager();
+		EntityTransaction tx = em.getTransaction();
 		try {
-			transaction.begin();
-			Genre updated = entityManager.merge(genre);
-			transaction.commit();
+			tx.begin();
+			Genre updated = em.merge(genre);
+			tx.commit();
+			log.info("Genre updated successfully with id: {}", updated.getGenreId());
 			return updated;
 		} catch (Exception e) {
-			/* rollback transaction on any persistence error */
-			if (transaction.isActive()) {
-				transaction.rollback();
-			}
-			throw new RuntimeException("Failed to update genre: " + e.getMessage(), e);
+			if (tx.isActive()) tx.rollback();
+			log.error("Failed to update genre [id={}]: {}", genre.getGenreId(), e.getMessage(), e);
+			throw new DataPersistenceException("Failed to update genre with id " + genre.getGenreId(), e);
 		} finally {
-			entityManager.close();
+			em.close();
 		}
 	}
 
 	/* delete method --> delete genre from table --> remove(Object Entity) */
 	public boolean deleteGenre(int genreId) {
-		EntityManager entityManager = entityManagerFactory.createEntityManager();
-		EntityTransaction transaction = entityManager.getTransaction();
+		EntityManager em = entityManagerFactory.createEntityManager();
+		EntityTransaction tx = em.getTransaction();
 		try {
-			transaction.begin();
-			Genre genre = entityManager.find(Genre.class, genreId);
+			tx.begin();
+			Genre genre = em.find(Genre.class, genreId);
 			if (genre != null) {
-				entityManager.remove(genre);
-				transaction.commit();
+				em.remove(genre);
+				tx.commit();
+				log.info("Genre deleted successfully with id: {}", genreId);
 				return true;
 			}
-			transaction.commit();
+			tx.commit();
+			log.warn("Delete requested but Genre not found with id: {}", genreId);
 			return false;
 		} catch (Exception e) {
-			/* rollback transaction on any persistence error */
-			if (transaction.isActive()) {
-				transaction.rollback();
-			}
-			throw new RuntimeException("Failed to delete genre with id " + genreId + ": " + e.getMessage(), e);
+			if (tx.isActive()) tx.rollback();
+			log.error("Failed to delete genre [id={}]: {}", genreId, e.getMessage(), e);
+			throw new DataPersistenceException("Failed to delete genre with id " + genreId, e);
 		} finally {
-			entityManager.close();
+			em.close();
+		}
+	}
+
+	/* count method --> get total genre count --> COUNT query (efficient, no full fetch) */
+	public long countGenres() {
+		EntityManager em = entityManagerFactory.createEntityManager();
+		try {
+			return em.createQuery("select count(g) from Genre g", Long.class).getSingleResult();
+		} catch (Exception e) {
+			log.error("Failed to count genres: {}", e.getMessage(), e);
+			throw new DataPersistenceException("Failed to count genres", e);
+		} finally {
+			em.close();
 		}
 	}
 
