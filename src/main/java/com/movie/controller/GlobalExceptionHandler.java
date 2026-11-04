@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
 		log.warn("Resource not found: {}", e.getMessage());
 		model.addAttribute("errorType", "Not Found");
 		model.addAttribute("errorMessage", e.getMessage());
-		return "WEB-INF/views/error.jsp";
+		return "/WEB-INF/views/error.jsp";
 	}
 
 	/* handle DataPersistenceException -- DAO/database operation failure */
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
 		log.error("Database operation failed: {}", e.getMessage(), e);
 		model.addAttribute("errorType", "Database Error");
 		model.addAttribute("errorMessage", "A database error occurred. Please try again or contact support.");
-		return "WEB-INF/views/error.jsp";
+		return "/WEB-INF/views/error.jsp";
 	}
 
 	/* handle any other RuntimeException */
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
 		log.error("Unhandled runtime exception: {}", e.getMessage(), e);
 		model.addAttribute("errorType", "Runtime Error");
 		model.addAttribute("errorMessage", e.getMessage());
-		return "WEB-INF/views/error.jsp";
+		return "/WEB-INF/views/error.jsp";
 	}
 
 	/* catch-all for any other unexpected exception */
@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
 		log.error("Unexpected exception: {}", e.getMessage(), e);
 		model.addAttribute("errorType", "Unexpected Error");
 		model.addAttribute("errorMessage", "An unexpected error occurred. Please try again or contact support.");
-		return "WEB-INF/views/error.jsp";
+		return "/WEB-INF/views/error.jsp";
 	}
 
 }

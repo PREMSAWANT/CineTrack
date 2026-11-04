@@ -2,10 +2,14 @@
     pageEncoding="UTF-8"%>
 <%@ page import="jakarta.persistence.EntityManagerFactory, jakarta.persistence.EntityManager, jakarta.persistence.Persistence, java.util.List, com.movie.entity.Movie, com.movie.entity.Director" %>
 <%
-    Integer movieCount = (Integer) request.getAttribute("movieCount");
-    Integer genreCount = (Integer) request.getAttribute("genreCount");
-    Integer directorCount = (Integer) request.getAttribute("directorCount");
-    Integer actorCount = (Integer) request.getAttribute("actorCount");
+    Object mc = request.getAttribute("movieCount");
+    Object gc = request.getAttribute("genreCount");
+    Object dc = request.getAttribute("directorCount");
+    Object ac = request.getAttribute("actorCount");
+    Integer movieCount = mc instanceof Number ? ((Number) mc).intValue() : null;
+    Integer genreCount = gc instanceof Number ? ((Number) gc).intValue() : null;
+    Integer directorCount = dc instanceof Number ? ((Number) dc).intValue() : null;
+    Integer actorCount = ac instanceof Number ? ((Number) ac).intValue() : null;
     List<Movie> liveMovies = null;
 
     // Fetch live record counts and movies directly from database
