@@ -41,12 +41,14 @@ public class ActorDao {
 		}
 	}
 
-	/* fetch all method --> get all actor list --> createQuery() */
+	/* fetch all method with eager director relation --> createQuery() */
 	public List<Actor> getAllActors() {
 		EntityManager em = entityManagerFactory.createEntityManager();
 		try {
-			log.debug("Fetching all actors");
-			return em.createQuery("select a from Actor a", Actor.class).getResultList();
+			log.debug("Fetching all actors with relations");
+			return em.createQuery(
+				"select distinct a from Actor a left join fetch a.director order by a.actorId asc",
+				Actor.class).getResultList();
 		} catch (Exception e) {
 			log.error("Failed to fetch actors: {}", e.getMessage(), e);
 			throw new DataPersistenceException("Failed to fetch actors", e);
@@ -55,15 +57,57 @@ public class ActorDao {
 		}
 	}
 
-	/* find method --> get actor by id --> find(Class, id) */
+	/* find method --> get actor by id with relations */
 	public Actor getActorById(int actorId) {
 		EntityManager em = entityManagerFactory.createEntityManager();
 		try {
 			log.debug("Looking up Actor with id: {}", actorId);
-			return em.find(Actor.class, actorId);
+			List<Actor> results = em.createQuery(
+				"select distinct a from Actor a left join fetch a.director where a.actorId = :id",
+				Actor.class)
+				.setParameter("id", actorId)
+				.getResultList();
+			return results.isEmpty() ? null : results.get(0);
 		} catch (Exception e) {
 			log.error("Failed to find actor [id={}]: {}", actorId, e.getMessage(), e);
 			throw new DataPersistenceException("Failed to find actor with id " + actorId, e);
+		} finally {
+			em.close();
+		}
+	}
+
+	/* search actors by keyword in name or nationality */
+	public List<Actor> searchActors(String keyword) {
+		EntityManager em = entityManagerFactory.createEntityManager();
+		try {
+			log.debug("Searching actors with keyword: {}", keyword);
+			return em.createQuery(
+				"select distinct a from Actor a left join fetch a.director " +
+				"where lower(a.actorName) like lower(:kw) or lower(a.nationality) like lower(:kw) " +
+				"order by a.actorId asc", Actor.class)
+				.setParameter("kw", "%" + keyword.trim() + "%")
+				.getResultList();
+		} catch (Exception e) {
+			log.error("Failed to search actors with keyword [{}]: {}", keyword, e.getMessage(), e);
+			throw new DataPersistenceException("Failed to search actors", e);
+		} finally {
+			em.close();
+		}
+	}
+
+	/* filter actors by nationality */
+	public List<Actor> getActorsByNationality(String nationality) {
+		EntityManager em = entityManagerFactory.createEntityManager();
+		try {
+			log.debug("Filtering actors by nationality: {}", nationality);
+			return em.createQuery(
+				"select distinct a from Actor a left join fetch a.director " +
+				"where lower(a.nationality) = lower(:nat) order by a.actorId asc", Actor.class)
+				.setParameter("nat", nationality.trim())
+				.getResultList();
+		} catch (Exception e) {
+			log.error("Failed to filter actors by nationality [{}]: {}", nationality, e.getMessage(), e);
+			throw new DataPersistenceException("Failed to filter actors by nationality", e);
 		} finally {
 			em.close();
 		}

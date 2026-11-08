@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.movie.dao.ActorDao;
+import com.movie.dao.DirectorDao;
 import com.movie.entity.Actor;
+import com.movie.entity.Director;
 import com.movie.exception.ResourceNotFoundException;
 
 @Service
@@ -19,10 +21,22 @@ public class ActorService {
 	@Autowired
 	private ActorDao actorDao;
 
+	@Autowired
+	private DirectorDao directorDao;
+
 	/* call method --> createActor(Actor actor) */
 	public Actor addActor(Actor actor) {
 		log.info("Adding new actor: {}", actor.getActorName());
 		return actorDao.createActor(actor);
+	}
+
+	/* add actor with frequent director association */
+	public Actor addActorWithDirector(Actor actor, Integer directorId) {
+		if (directorId != null && directorId > 0) {
+			Director director = directorDao.getDirectorById(directorId);
+			actor.setDirector(director);
+		}
+		return addActor(actor);
 	}
 
 	/* call method --> getAllActors() */
@@ -44,6 +58,32 @@ public class ActorService {
 	public Actor updateActor(Actor actor) {
 		log.info("Updating actor with id: {}", actor.getActorId());
 		return actorDao.updateActor(actor);
+	}
+
+	/* update actor with director synchronization */
+	public Actor updateActorWithDirector(Actor actor, Integer directorId) {
+		if (directorId != null && directorId > 0) {
+			Director director = directorDao.getDirectorById(directorId);
+			actor.setDirector(director);
+		} else {
+			actor.setDirector(null);
+		}
+		return updateActor(actor);
+	}
+
+	/* search actors by keyword across name or nationality */
+	public List<Actor> searchActors(String keyword) {
+		if (keyword == null || keyword.trim().isEmpty()) {
+			return getAllActors();
+		}
+		log.info("Searching actors with keyword: '{}'", keyword);
+		return actorDao.searchActors(keyword.trim());
+	}
+
+	/* filter actors by nationality */
+	public List<Actor> getActorsByNationality(String nationality) {
+		log.info("Filtering actors by nationality: '{}'", nationality);
+		return actorDao.getActorsByNationality(nationality);
 	}
 
 	/* call method --> deleteActor(int actorId) */

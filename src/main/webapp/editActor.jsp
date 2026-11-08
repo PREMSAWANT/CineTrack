@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-<%@ page import="com.movie.entity.Actor" %>
+<%@ page import="java.util.List, com.movie.entity.Actor, com.movie.entity.Director" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -317,6 +317,26 @@
                            value="<%= actor.getAge() %>" 
                            min="1" 
                            max="120">
+                </div>
+
+                <div class="form-group">
+                    <label for="directorId" class="form-label">Frequent Director / Mentor</label>
+                    <select id="directorId" name="directorId" class="form-control">
+                        <option value="">-- No Director Linked --</option>
+                        <%
+                            List<Director> directors = (List<Director>) request.getAttribute("directors");
+                            int currentDirId = (actor.getDirector() != null) ? actor.getDirector().getDirectorId() : -1;
+                            if (directors != null) {
+                                for (Director d : directors) {
+                        %>
+                            <option value="<%= d.getDirectorId() %>" <%= (d.getDirectorId() == currentDirId) ? "selected" : "" %>>
+                                <%= d.getDirectorName() %>
+                            </option>
+                        <%
+                                }
+                            }
+                        %>
+                    </select>
                 </div>
 
                 <div class="form-actions">
