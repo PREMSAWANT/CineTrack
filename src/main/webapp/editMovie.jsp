@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-<%@ page import="com.movie.entity.Movie" %>
+<%@ page import="java.util.List, com.movie.entity.Movie, com.movie.entity.Genre, com.movie.entity.Director" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -335,6 +335,48 @@
                                name="language" 
                                class="form-control" 
                                value="<%= movie.getLanguage() != null ? movie.getLanguage() : "" %>">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="genreId" class="form-label">Genre</label>
+                        <select id="genreId" name="genreId" class="form-control">
+                            <option value="">-- No Genre Assigned --</option>
+                            <%
+                                List<Genre> genres = (List<Genre>) request.getAttribute("genres");
+                                int currentGenreId = (movie.getGenre() != null) ? movie.getGenre().getGenreId() : -1;
+                                if (genres != null) {
+                                    for (Genre g : genres) {
+                            %>
+                                <option value="<%= g.getGenreId() %>" <%= (g.getGenreId() == currentGenreId) ? "selected" : "" %>>
+                                    <%= g.getGenreName() %>
+                                </option>
+                            <%
+                                    }
+                                }
+                            %>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="directorId" class="form-label">Director</label>
+                        <select id="directorId" name="directorId" class="form-control">
+                            <option value="">-- No Director Assigned --</option>
+                            <%
+                                List<Director> directors = (List<Director>) request.getAttribute("directors");
+                                int currentDirectorId = (movie.getDirector() != null) ? movie.getDirector().getDirectorId() : -1;
+                                if (directors != null) {
+                                    for (Director d : directors) {
+                            %>
+                                <option value="<%= d.getDirectorId() %>" <%= (d.getDirectorId() == currentDirectorId) ? "selected" : "" %>>
+                                    <%= d.getDirectorName() %>
+                                </option>
+                            <%
+                                    }
+                                }
+                            %>
+                        </select>
                     </div>
                 </div>
 

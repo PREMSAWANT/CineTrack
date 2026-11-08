@@ -45,17 +45,22 @@ public class MovieController {
 		return "index.jsp";
 	}
 
-	/* create method --> return jsp file --> movie details --> addMovie.jsp */
+	/* create method --> return jsp file with genres and directors populated --> addMovie.jsp */
 	@GetMapping("/displayMovie")
-	public String displayMovie() {
+	public String displayMovie(Model model) {
+		model.addAttribute("genres", genreService.getAllGenres());
+		model.addAttribute("directors", directorService.getAllDirectors());
 		return "addMovie.jsp";
 	}
 
-	/* call method --> addMovie(Movie movie) --> redirect to list on success */
+	/* call method --> addMovie with relations --> redirect to list on success */
 	@PostMapping("/saveMovie")
-	public String saveMovie(Movie movie, RedirectAttributes redirectAttributes) {
-		movieService.addMovie(movie);
-		log.info("Movie '{}' saved via controller, redirecting to list", movie.getTitle());
+	public String saveMovie(Movie movie,
+			@RequestParam(name = "genreId", required = false) Integer genreId,
+			@RequestParam(name = "directorId", required = false) Integer directorId,
+			RedirectAttributes redirectAttributes) {
+		movieService.addMovieWithRelations(movie, genreId, directorId);
+		log.info("Movie '{}' saved with relations, redirecting to list", movie.getTitle());
 		redirectAttributes.addFlashAttribute("successMessage", "Movie added successfully!");
 		return "redirect:/viewMovies";
 	}
@@ -65,22 +70,49 @@ public class MovieController {
 	public String viewMovies(Model model) {
 		List<Movie> movies = movieService.getAllMovies();
 		model.addAttribute("movies", movies);
+		model.addAttribute("genres", genreService.getAllGenres());
 		return "displayMovies.jsp";
 	}
 
-	/* create method --> return jsp file --> edit movie details --> editMovie.jsp */
+	/* search movies by keyword in title, description, or language */
+	@GetMapping("/searchMovies")
+	public String searchMovies(@RequestParam(name = "query", required = false, defaultValue = "") String query,
+			Model model) {
+		List<Movie> movies = movieService.searchMovies(query);
+		model.addAttribute("movies", movies);
+		model.addAttribute("genres", genreService.getAllGenres());
+		model.addAttribute("activeSearch", query);
+		return "displayMovies.jsp";
+	}
+
+	/* filter movies by genre id */
+	@GetMapping("/filterMovies")
+	public String filterMovies(@RequestParam("genreId") int genreId, Model model) {
+		List<Movie> movies = movieService.getMoviesByGenre(genreId);
+		model.addAttribute("movies", movies);
+		model.addAttribute("genres", genreService.getAllGenres());
+		model.addAttribute("activeGenreId", genreId);
+		return "displayMovies.jsp";
+	}
+
+	/* create method --> return jsp file --> edit movie details with genres & directors --> editMovie.jsp */
 	@GetMapping("/editMovie")
 	public String editMovie(@RequestParam("id") int id, Model model) {
 		/* throws ResourceNotFoundException if not found -- caught by GlobalExceptionHandler */
 		Movie movie = movieService.getMovieById(id);
 		model.addAttribute("movie", movie);
+		model.addAttribute("genres", genreService.getAllGenres());
+		model.addAttribute("directors", directorService.getAllDirectors());
 		return "editMovie.jsp";
 	}
 
-	/* call method --> updateMovie(Movie movie) */
+	/* call method --> updateMovie with relations */
 	@PostMapping("/updateMovie")
-	public String updateMovie(Movie movie, RedirectAttributes redirectAttributes) {
-		movieService.updateMovie(movie);
+	public String updateMovie(Movie movie,
+			@RequestParam(name = "genreId", required = false) Integer genreId,
+			@RequestParam(name = "directorId", required = false) Integer directorId,
+			RedirectAttributes redirectAttributes) {
+		movieService.updateMovieWithRelations(movie, genreId, directorId);
 		redirectAttributes.addFlashAttribute("successMessage", "Movie updated successfully!");
 		return "redirect:/viewMovies";
 	}

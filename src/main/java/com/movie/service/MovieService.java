@@ -7,7 +7,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.movie.dao.DirectorDao;
+import com.movie.dao.GenreDao;
 import com.movie.dao.MovieDao;
+import com.movie.entity.Director;
+import com.movie.entity.Genre;
 import com.movie.entity.Movie;
 import com.movie.exception.ResourceNotFoundException;
 
@@ -19,10 +23,29 @@ public class MovieService {
 	@Autowired
 	private MovieDao movieDao;
 
+	@Autowired
+	private GenreDao genreDao;
+
+	@Autowired
+	private DirectorDao directorDao;
+
 	/* call method --> createMovie(Movie movie) */
 	public Movie addMovie(Movie movie) {
 		log.info("Adding new movie: {}", movie.getTitle());
 		return movieDao.createMovie(movie);
+	}
+
+	/* add movie and link selected genre and director */
+	public Movie addMovieWithRelations(Movie movie, Integer genreId, Integer directorId) {
+		if (genreId != null && genreId > 0) {
+			Genre genre = genreDao.getGenreById(genreId);
+			movie.setGenre(genre);
+		}
+		if (directorId != null && directorId > 0) {
+			Director director = directorDao.getDirectorById(directorId);
+			movie.setDirector(director);
+		}
+		return addMovie(movie);
 	}
 
 	/* call method --> getAllMovies() */
@@ -44,6 +67,38 @@ public class MovieService {
 	public Movie updateMovie(Movie movie) {
 		log.info("Updating movie with id: {}", movie.getMovieId());
 		return movieDao.updateMovie(movie);
+	}
+
+	/* update movie and synchronize genre and director relationships */
+	public Movie updateMovieWithRelations(Movie movie, Integer genreId, Integer directorId) {
+		if (genreId != null && genreId > 0) {
+			Genre genre = genreDao.getGenreById(genreId);
+			movie.setGenre(genre);
+		} else {
+			movie.setGenre(null);
+		}
+		if (directorId != null && directorId > 0) {
+			Director director = directorDao.getDirectorById(directorId);
+			movie.setDirector(director);
+		} else {
+			movie.setDirector(null);
+		}
+		return updateMovie(movie);
+	}
+
+	/* search movies by keyword across title, description, or language */
+	public List<Movie> searchMovies(String keyword) {
+		if (keyword == null || keyword.trim().isEmpty()) {
+			return getAllMovies();
+		}
+		log.info("Searching movies with keyword: '{}'", keyword);
+		return movieDao.searchMovies(keyword.trim());
+	}
+
+	/* filter movies by genre */
+	public List<Movie> getMoviesByGenre(int genreId) {
+		log.info("Filtering movies by genre id: {}", genreId);
+		return movieDao.getMoviesByGenre(genreId);
 	}
 
 	/* call method --> deleteMovie(int movieId) */

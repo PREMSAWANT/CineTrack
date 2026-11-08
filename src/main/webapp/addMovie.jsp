@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
+<%@ page import="java.util.List, com.movie.entity.Genre, com.movie.entity.Director" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -363,6 +364,49 @@
                                name="language" 
                                class="form-control" 
                                placeholder="e.g. English, Japanese">
+                    </div>
+                </div>
+
+                <!-- Genre & Director Relations -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="genreId" class="form-label">
+                            Genre
+                        </label>
+                        <select id="genreId" name="genreId" class="form-control">
+                            <option value="">-- Select Genre (Optional) --</option>
+                            <%
+                                List<Genre> genres = (List<Genre>) request.getAttribute("genres");
+                                if (genres != null) {
+                                    for (Genre g : genres) {
+                            %>
+                                <option value="<%= g.getGenreId() %>"><%= g.getGenreName() %></option>
+                            <%
+                                    }
+                                }
+                            %>
+                        </select>
+                        <div class="form-help">Primary movie classification.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="directorId" class="form-label">
+                            Director
+                        </label>
+                        <select id="directorId" name="directorId" class="form-control">
+                            <option value="">-- Select Director (Optional) --</option>
+                            <%
+                                List<Director> directors = (List<Director>) request.getAttribute("directors");
+                                if (directors != null) {
+                                    for (Director d : directors) {
+                            %>
+                                <option value="<%= d.getDirectorId() %>"><%= d.getDirectorName() %></option>
+                            <%
+                                    }
+                                }
+                            %>
+                        </select>
+                        <div class="form-help">Lead filmmaker.</div>
                     </div>
                 </div>
 

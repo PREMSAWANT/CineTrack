@@ -41,12 +41,14 @@ public class MovieDao {
 		}
 	}
 
-	/* fetch all method --> get all movie list --> createQuery() */
+	/* fetch all method --> get all movies with eager genre & director relations --> createQuery() */
 	public List<Movie> getAllMovies() {
 		EntityManager em = entityManagerFactory.createEntityManager();
 		try {
-			log.debug("Fetching all movies");
-			return em.createQuery("select m from Movie m", Movie.class).getResultList();
+			log.debug("Fetching all movies with relations");
+			return em.createQuery(
+				"select distinct m from Movie m left join fetch m.genre left join fetch m.director order by m.movieId asc",
+				Movie.class).getResultList();
 		} catch (Exception e) {
 			log.error("Failed to fetch movies: {}", e.getMessage(), e);
 			throw new DataPersistenceException("Failed to fetch movies", e);
@@ -55,15 +57,57 @@ public class MovieDao {
 		}
 	}
 
-	/* find method --> get movie by id --> find(Class, id) */
+	/* find method --> get movie by id with relations --> query with fetch joins */
 	public Movie getMovieById(int movieId) {
 		EntityManager em = entityManagerFactory.createEntityManager();
 		try {
 			log.debug("Looking up Movie with id: {}", movieId);
-			return em.find(Movie.class, movieId);
+			List<Movie> results = em.createQuery(
+				"select distinct m from Movie m left join fetch m.genre left join fetch m.director where m.movieId = :id",
+				Movie.class)
+				.setParameter("id", movieId)
+				.getResultList();
+			return results.isEmpty() ? null : results.get(0);
 		} catch (Exception e) {
 			log.error("Failed to find movie [id={}]: {}", movieId, e.getMessage(), e);
 			throw new DataPersistenceException("Failed to find movie with id " + movieId, e);
+		} finally {
+			em.close();
+		}
+	}
+
+	/* search movies by title, description, or language */
+	public List<Movie> searchMovies(String keyword) {
+		EntityManager em = entityManagerFactory.createEntityManager();
+		try {
+			log.debug("Searching movies with keyword: {}", keyword);
+			return em.createQuery(
+				"select distinct m from Movie m left join fetch m.genre left join fetch m.director " +
+				"where lower(m.title) like lower(:kw) or lower(m.description) like lower(:kw) or lower(m.language) like lower(:kw) " +
+				"order by m.movieId asc", Movie.class)
+				.setParameter("kw", "%" + keyword.trim() + "%")
+				.getResultList();
+		} catch (Exception e) {
+			log.error("Failed to search movies with keyword [{}]: {}", keyword, e.getMessage(), e);
+			throw new DataPersistenceException("Failed to search movies", e);
+		} finally {
+			em.close();
+		}
+	}
+
+	/* filter movies by genre */
+	public List<Movie> getMoviesByGenre(int genreId) {
+		EntityManager em = entityManagerFactory.createEntityManager();
+		try {
+			log.debug("Filtering movies by genre id: {}", genreId);
+			return em.createQuery(
+				"select distinct m from Movie m left join fetch m.genre left join fetch m.director " +
+				"where m.genre.genreId = :genreId order by m.movieId asc", Movie.class)
+				.setParameter("genreId", genreId)
+				.getResultList();
+		} catch (Exception e) {
+			log.error("Failed to filter movies by genre [id={}]: {}", genreId, e.getMessage(), e);
+			throw new DataPersistenceException("Failed to filter movies by genre", e);
 		} finally {
 			em.close();
 		}
