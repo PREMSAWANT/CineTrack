@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineTrack | Movie Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cineRed: '#e50914',
+                        cineDark: '#141414',
+                        cineCard: '#1f1f1f',
+                        cineBorder: '#333333'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #141414; }
+        ::-webkit-scrollbar-thumb { background: #333333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #e50914; }
+    </style>
+</head>
+<body class="bg-cineDark text-gray-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Navigation Header -->
+    <header class="bg-black/80 backdrop-blur-md sticky top-0 z-40 border-b border-cineBorder">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+                <i class="fa-solid fa-film text-cineRed text-3xl"></i>
+                <span class="text-2xl font-black tracking-wider text-white">CINE<span class="text-cineRed">TRACK</span></span>
+            </div>
+            
+            <nav class="hidden md:flex items-center space-x-1 lg:space-x-3">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-cineRed flex items-center space-x-2">
+                    <i class="fa-solid fa-compass"></i><span>Explore</span>
+                </button>
+                <button onclick="switchTab('addMovie')" id="nav-addMovie" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-300 hover:text-white hover:bg-zinc-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-plus-circle"></i><span>Add Movie</span>
+                </button>
+                <button onclick="switchTab('actors')" id="nav-actors" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-300 hover:text-white hover:bg-zinc-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-masks-theater"></i><span>Actors</span>
+                </button>
+                <button onclick="switchTab('directors')" id="nav-directors" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-300 hover:text-white hover:bg-zinc-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-clapperboard"></i><span>Directors</span>
+                </button>
+                <button onclick="switchTab('genres')" id="nav-genres" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-300 hover:text-white hover:bg-zinc-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-tags"></i><span>Genres</span>
+                </button>
+                <button onclick="switchTab('auth')" id="nav-auth" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-300 hover:text-white hover:bg-zinc-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-shield-halved"></i><span>Auth & OTP</span>
+                </button>
+                <a href="/swagger-ui.html" target="_blank" class="px-3 py-1.5 rounded-lg text-sm font-semibold text-amber-400 hover:bg-zinc-800 border border-amber-500/40 flex items-center space-x-2">
+                    <i class="fa-solid fa-code"></i><span>Swagger API</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- Top Statistics Bar -->
+        <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+            <div class="bg-cineCard p-3.5 rounded-xl border border-cineBorder flex items-center space-x-3">
+                <div class="p-2.5 bg-red-600/20 text-red-500 rounded-lg text-lg"><i class="fa-solid fa-video"></i></div>
+                <div>
+                    <div class="text-[11px] text-gray-400 font-medium">Total Movies</div>
+                    <div id="stat-movies" class="text-xl font-bold text-white">0</div>
+                </div>
+            </div>
+            <div class="bg-cineCard p-3.5 rounded-xl border border-cineBorder flex items-center space-x-3">
+                <div class="p-2.5 bg-emerald-600/20 text-emerald-400 rounded-lg text-lg"><i class="fa-solid fa-play"></i></div>
+                <div>
+                    <div class="text-[11px] text-gray-400 font-medium">Now Showing</div>
+                    <div id="stat-nowshowing" class="text-xl font-bold text-emerald-400">0</div>
+                </div>
+            </div>
+            <div class="bg-cineCard p-3.5 rounded-xl border border-cineBorder flex items-center space-x-3">
+                <div class="p-2.5 bg-amber-600/20 text-amber-400 rounded-lg text-lg"><i class="fa-solid fa-calendar-days"></i></div>
+                <div>
+                    <div class="text-[11px] text-gray-400 font-medium">Upcoming</div>
+                    <div id="stat-upcoming" class="text-xl font-bold text-amber-400">0</div>
+                </div>
+            </div>
+            <div class="bg-cineCard p-3.5 rounded-xl border border-cineBorder flex items-center space-x-3">
+                <div class="p-2.5 bg-blue-600/20 text-blue-400 rounded-lg text-lg"><i class="fa-solid fa-clapperboard"></i></div>
+                <div>
+                    <div class="text-[11px] text-gray-400 font-medium">Directors</div>
+                    <div id="stat-directors" class="text-xl font-bold text-white">0</div>
+                </div>
+            </div>
+            <div class="bg-cineCard p-3.5 rounded-xl border border-cineBorder flex items-center space-x-3">
+                <div class="p-2.5 bg-purple-600/20 text-purple-400 rounded-lg text-lg"><i class="fa-solid fa-users"></i></div>
+                <div>
+                    <div class="text-[11px] text-gray-400 font-medium">Actors</div>
+                    <div id="stat-actors" class="text-xl font-bold text-white">0</div>
+                </div>
+            </div>
+            <div class="bg-cineCard p-3.5 rounded-xl border border-cineBorder flex items-center space-x-3">
+                <div class="p-2.5 bg-teal-600/20 text-teal-400 rounded-lg text-lg"><i class="fa-solid fa-star"></i></div>
+                <div>
+                    <div class="text-[11px] text-gray-400 font-medium">Avg Rating</div>
+                    <div id="stat-rating" class="text-xl font-bold text-amber-400">0.0</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 1: DASHBOARD & MOVIE EXPLORE -->
+        <!-- ========================================== -->
+        <section id="tab-dashboard" class="tab-pane">
+            <!-- Filter Bar -->
+            <div class="bg-cineCard p-4 rounded-xl border border-cineBorder mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-gray-400"></i>
+                    <input type="text" id="movieSearchInput" oninput="filterMovies()" placeholder="Search movie by title..." 
+                        class="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                    <!-- Status Filter (Enum) -->
+                    <select id="statusFilterSelect" onchange="filterMovies()" class="bg-zinc-900 border border-cineBorder rounded-lg px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-cineRed">
+                        <option value="">All Status</option>
+                        <option value="NOW_SHOWING">Now Showing</option>
+                        <option value="UPCOMING">Upcoming</option>
+                        <option value="RELEASED">Released</option>
+                        <option value="ARCHIVED">Archived</option>
+                    </select>
+
+                    <!-- Certificate Filter (Enum) -->
+                    <select id="certFilterSelect" onchange="filterMovies()" class="bg-zinc-900 border border-cineBorder rounded-lg px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-cineRed">
+                        <option value="">All Certificates</option>
+                        <option value="U">U (Universal)</option>
+                        <option value="UA">UA (Parental Guidance)</option>
+                        <option value="PG_13">PG-13</option>
+                        <option value="A">A (Adults Only)</option>
+                        <option value="R">R (Restricted)</option>
+                    </select>
+
+                    <!-- Genre Filter -->
+                    <select id="genreFilterSelect" onchange="filterMovies()" class="bg-zinc-900 border border-cineBorder rounded-lg px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-cineRed">
+                        <option value="">All Genres</option>
+                    </select>
+
+                    <!-- Rating Filter -->
+                    <select id="ratingFilterSelect" onchange="filterMovies()" class="bg-zinc-900 border border-cineBorder rounded-lg px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-cineRed">
+                        <option value="0">All Ratings</option>
+                        <option value="8">⭐ 8.0 &amp; above</option>
+                        <option value="7">⭐ 7.0 &amp; above</option>
+                    </select>
+
+                    <button onclick="loadAllData()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-gray-300 flex items-center space-x-1">
+                        <i class="fa-solid fa-rotate"></i><span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Movies Grid -->
+            <div id="moviesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Movie cards rendered dynamically via JS -->
+            </div>
+            
+            <div id="noMoviesPlaceholder" class="hidden text-center py-16 bg-cineCard rounded-2xl border border-cineBorder">
+                <i class="fa-solid fa-film text-gray-600 text-5xl mb-3"></i>
+                <h3 class="text-lg font-bold text-gray-300">No Movies Found</h3>
+                <p class="text-sm text-gray-500 mb-4">Start by adding your first movie to the catalog.</p>
+                <button onclick="switchTab('addMovie')" class="px-4 py-2 bg-cineRed text-white rounded-lg text-sm font-semibold hover:bg-red-700">Add Movie Now</button>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: ADD / EDIT MOVIE -->
+        <!-- ========================================== -->
+        <section id="tab-addMovie" class="tab-pane hidden">
+            <div class="max-w-3xl mx-auto bg-cineCard border border-cineBorder rounded-2xl p-6 sm:p-8">
+                <div class="flex items-center space-x-3 mb-6 border-b border-cineBorder pb-4">
+                    <i class="fa-solid fa-circle-plus text-cineRed text-2xl"></i>
+                    <div>
+                        <h2 id="movieFormTitle" class="text-xl font-bold text-white">Add New Movie</h2>
+                        <p class="text-xs text-gray-400">Save movie with status, certificate, genre, director, and actors.</p>
+                    </div>
+                </div>
+
+                <form id="movieForm" onsubmit="handleMovieSubmit(event)" class="space-y-4">
+                    <input type="hidden" id="formMovieId">
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Movie Title *</label>
+                        <input type="text" id="formMovieTitle" required placeholder="e.g. Inception, Interstellar"
+                            class="w-full px-4 py-2.5 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Duration (minutes)</label>
+                            <input type="number" step="0.1" id="formMovieDuration" placeholder="e.g. 148"
+                                class="w-full px-4 py-2.5 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Language</label>
+                            <input type="text" id="formMovieLanguage" placeholder="e.g. English, Hindi"
+                                class="w-full px-4 py-2.5 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Rating (0 - 10)</label>
+                            <input type="number" step="0.1" min="0" max="10" id="formMovieRating" placeholder="e.g. 8.8"
+                                class="w-full px-4 py-2.5 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                    </div>
+
+                    <!-- Enums: MovieStatus & Certificate -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Movie Status (Enum)</label>
+                            <select id="formMovieStatus" class="w-full px-4 py-2.5 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                                <option value="NOW_SHOWING">NOW_SHOWING</option>
+                                <option value="UPCOMING">UPCOMING</option>
+                                <option value="RELEASED" selected>RELEASED</option>
+                                <option value="ARCHIVED">ARCHIVED</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Content Certificate (Enum)</label>
+                            <select id="formMovieCertificate" class="w-full px-4 py-2.5 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                                <option value="U">U (Universal)</option>
+                                <option value="UA" selected>UA (Parental Guidance)</option>
+                                <option value="PG_13">PG-13</option>
+                                <option value="A">A (Adults)</option>
+                                <option value="R">R (Restricted)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Genre</label>
+                            <select id="formMovieGenre" class="w-full px-4 py-2.5 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                                <option value="">Select Genre</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Director</label>
+                            <select id="formMovieDirector" class="w-full px-4 py-2.5 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                                <option value="">Select Director</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Select Cast (Actors)</label>
+                        <div id="formMovieActorsList" class="max-h-40 overflow-y-auto bg-zinc-900 border border-cineBorder rounded-lg p-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <!-- Dynamic actor checkboxes -->
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Plot Summary / Description</label>
+                        <textarea id="formMovieDesc" rows="3" placeholder="Brief summary of the movie..."
+                            class="w-full px-4 py-2.5 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed"></textarea>
+                    </div>
+
+                    <div class="flex items-center justify-end space-x-3 pt-4 border-t border-cineBorder">
+                        <button type="button" onclick="resetMovieForm()" class="px-5 py-2 bg-zinc-800 hover:bg-zinc-700 text-gray-300 rounded-lg text-sm font-semibold">Cancel</button>
+                        <button type="submit" id="movieSubmitBtn" class="px-6 py-2 bg-cineRed hover:bg-red-700 text-white rounded-lg text-sm font-semibold flex items-center space-x-2">
+                            <i class="fa-solid fa-floppy-disk"></i><span id="movieSubmitText">Save Movie</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: MANAGE ACTORS -->
+        <!-- ========================================== -->
+        <section id="tab-actors" class="tab-pane hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Add Actor Form -->
+                <div class="bg-cineCard p-6 rounded-2xl border border-cineBorder h-fit">
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center space-x-2">
+                        <i class="fa-solid fa-user-plus text-purple-400"></i>
+                        <span>Add New Actor</span>
+                    </h3>
+                    <p class="text-xs text-gray-400 mb-4">Register an actor with gender and director link.</p>
+                    
+                    <form onsubmit="handleActorSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Actor Name *</label>
+                            <input type="text" id="actorFormName" required placeholder="e.g. Leonardo DiCaprio"
+                                class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Nationality</label>
+                                <input type="text" id="actorFormNationality" placeholder="e.g. American"
+                                    class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Age</label>
+                                <input type="number" id="actorFormAge" min="1" placeholder="e.g. 48"
+                                    class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Gender (Enum)</label>
+                            <select id="actorFormGender" class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                                <option value="MALE">MALE</option>
+                                <option value="FEMALE">FEMALE</option>
+                                <option value="OTHER">OTHER</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Associated Director</label>
+                            <select id="actorFormDirector" class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                                <option value="">None / Independent</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-plus"></i><span>Save Actor</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Actors List Table -->
+                <div class="lg:col-span-2 bg-cineCard p-6 rounded-2xl border border-cineBorder">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center justify-between">
+                        <span class="flex items-center space-x-2">
+                            <i class="fa-solid fa-masks-theater text-purple-400"></i>
+                            <span>Actors Directory</span>
+                        </span>
+                        <span id="actorsBadgeCount" class="text-xs bg-zinc-800 text-purple-400 px-2.5 py-1 rounded-full font-semibold">0 Actors</span>
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="text-xs uppercase bg-zinc-900/80 text-gray-400 border-b border-cineBorder">
+                                <tr>
+                                    <th class="py-3 px-4">Name</th>
+                                    <th class="py-3 px-4">Gender</th>
+                                    <th class="py-3 px-4">Nationality</th>
+                                    <th class="py-3 px-4">Age</th>
+                                    <th class="py-3 px-4">Director</th>
+                                    <th class="py-3 px-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="actorsTableBody" class="divide-y divide-cineBorder">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: MANAGE DIRECTORS -->
+        <!-- ========================================== -->
+        <section id="tab-directors" class="tab-pane hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Add Director Form -->
+                <div class="bg-cineCard p-6 rounded-2xl border border-cineBorder h-fit">
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center space-x-2">
+                        <i class="fa-solid fa-clapperboard text-blue-400"></i>
+                        <span>Add New Director</span>
+                    </h3>
+                    <p class="text-xs text-gray-400 mb-4">Register a film director into CineTrack.</p>
+                    
+                    <form onsubmit="handleDirectorSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Director Name *</label>
+                            <input type="text" id="directorFormName" required placeholder="e.g. Christopher Nolan"
+                                class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Nationality</label>
+                            <input type="text" id="directorFormNationality" placeholder="e.g. British-American"
+                                class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-plus"></i><span>Save Director</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Directors List Table -->
+                <div class="lg:col-span-2 bg-cineCard p-6 rounded-2xl border border-cineBorder">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center justify-between">
+                        <span class="flex items-center space-x-2">
+                            <i class="fa-solid fa-clapperboard text-blue-400"></i>
+                            <span>Directors Directory</span>
+                        </span>
+                        <span id="directorsBadgeCount" class="text-xs bg-zinc-800 text-blue-400 px-2.5 py-1 rounded-full font-semibold">0 Directors</span>
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="text-xs uppercase bg-zinc-900/80 text-gray-400 border-b border-cineBorder">
+                                <tr>
+                                    <th class="py-3 px-4">Name</th>
+                                    <th class="py-3 px-4">Nationality</th>
+                                    <th class="py-3 px-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="directorsTableBody" class="divide-y divide-cineBorder">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 5: MANAGE GENRES -->
+        <!-- ========================================== -->
+        <section id="tab-genres" class="tab-pane hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Add Genre Form -->
+                <div class="bg-cineCard p-6 rounded-2xl border border-cineBorder h-fit">
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center space-x-2">
+                        <i class="fa-solid fa-tag text-emerald-400"></i>
+                        <span>Add New Genre</span>
+                    </h3>
+                    <p class="text-xs text-gray-400 mb-4">Define a new category / genre for movies.</p>
+                    
+                    <form onsubmit="handleGenreSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Genre Name *</label>
+                            <input type="text" id="genreFormName" required placeholder="e.g. Sci-Fi, Thriller, Action"
+                                class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Description</label>
+                            <textarea id="genreFormDesc" rows="3" placeholder="Description of this genre..."
+                                class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed"></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-plus"></i><span>Save Genre</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Genres Cards Grid -->
+                <div class="lg:col-span-2">
+                    <div id="genresListGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 6: AUTH & OTP VERIFICATION -->
+        <!-- ========================================== -->
+        <section id="tab-auth" class="tab-pane hidden">
+            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- User Registration -->
+                <div class="bg-cineCard p-6 sm:p-8 rounded-2xl border border-cineBorder">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="p-3 bg-red-600/20 text-cineRed rounded-xl text-xl"><i class="fa-solid fa-user-shield"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Register User</h3>
+                            <p class="text-xs text-gray-400">Trigger JavaMailSender OTP verification</p>
+                        </div>
+                    </div>
+                    
+                    <form onsubmit="handleUserRegister(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Full Name *</label>
+                            <input type="text" id="authUserFullName" required placeholder="John Doe"
+                                class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Email Address *</label>
+                            <input type="email" id="authUserEmail" required placeholder="john@example.com"
+                                class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Password *</label>
+                            <input type="password" id="authUserPassword" required placeholder="••••••••"
+                                class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Address</label>
+                            <input type="text" id="authUserAddress" placeholder="City, Country"
+                                class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                        </div>
+                        <button type="submit" id="btnRegisterUser" class="w-full py-2.5 bg-cineRed hover:bg-red-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-paper-plane"></i><span>Register &amp; Send OTP</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- OTP Verification Panel -->
+                <div class="bg-cineCard p-6 sm:p-8 rounded-2xl border border-cineBorder flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="p-3 bg-amber-600/20 text-amber-400 rounded-xl text-xl"><i class="fa-solid fa-envelope-open-text"></i></div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Verify OTP</h3>
+                                <p class="text-xs text-gray-400">Enter the 6-digit code received via email</p>
+                            </div>
+                        </div>
+
+                        <form onsubmit="handleVerifyOtp(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Email Address</label>
+                                <input type="email" id="verifyOtpEmail" required placeholder="email entered during registration"
+                                    class="w-full px-4 py-2 bg-zinc-900 border border-cineBorder rounded-lg text-sm focus:outline-none focus:border-cineRed">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">6-Digit OTP Code</label>
+                                <input type="text" id="verifyOtpCode" maxlength="6" required placeholder="e.g. 849201"
+                                    class="w-full px-4 py-3 bg-zinc-900 border border-cineBorder rounded-lg text-lg tracking-widest text-center font-mono focus:outline-none focus:border-amber-400">
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg text-sm flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-check-circle"></i><span>Verify Account</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="pt-6 border-t border-cineBorder mt-6 flex items-center justify-between">
+                        <span class="text-xs text-gray-400">Didn't receive code?</span>
+                        <button type="button" onclick="handleResendOtp()" class="text-xs text-cineRed hover:underline font-semibold flex items-center space-x-1">
+                            <i class="fa-solid fa-rotate-right"></i><span>Resend OTP</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black/90 border-t border-cineBorder py-6 mt-12 text-center text-xs text-gray-500">
+        <p>CineTrack &copy; 2026 &bull; Spring Boot REST API &amp; Dynamic Web Portal</p>
+    </footer>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        const API_BASE = window.location.origin;
+
+        let state = {
+            movies: [],
+            actors: [],
+            directors: [],
+            genres: [],
+            stats: {}
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllData();
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-cineRed', 'text-white');
+                btn.classList.add('text-gray-300');
+            });
+
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            const activeNav = document.getElementById(`nav-${tabName}`);
+
+            if (activeTab) activeTab.classList.remove('hidden');
+            if (activeNav) {
+                activeNav.classList.add('bg-cineRed', 'text-white');
+                activeNav.classList.remove('text-gray-300');
+            }
+
+            if (tabName === 'dashboard') loadMovies();
+            if (tabName === 'actors') loadActors();
+            if (tabName === 'directors') loadDirectors();
+            if (tabName === 'genres') loadGenres();
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-red-600' : 'bg-blue-600');
+            const icon = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-circle-xmark' : 'fa-info-circle');
+
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-sm transform transition-all duration-300 pointer-events-auto border border-white/20`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        async function loadAllData() {
+            await Promise.all([
+                loadStats(),
+                loadGenres(),
+                loadDirectors(),
+                loadActors(),
+                loadMovies()
+            ]);
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/dashboard/stats`);
+                if (res.ok) {
+                    const stats = await res.json();
+                    document.getElementById('stat-movies').textContent = stats.totalMovies || 0;
+                    document.getElementById('stat-nowshowing').textContent = stats.nowShowingMovies || 0;
+                    document.getElementById('stat-upcoming').textContent = stats.upcomingMovies || 0;
+                    document.getElementById('stat-directors').textContent = stats.totalDirectors || 0;
+                    document.getElementById('stat-actors').textContent = stats.totalActors || 0;
+                    document.getElementById('stat-rating').textContent = (stats.averageRating || 0).toFixed(1);
+                }
+            } catch (err) {
+                console.error("Error fetching stats:", err);
+            }
+        }
+
+        async function loadGenres() {
+            try {
+                const res = await fetch(`${API_BASE}/api/genre/getAll`);
+                if (res.ok) {
+                    state.genres = await res.json();
+                    renderGenresUI();
+                    populateGenreDropdowns();
+                }
+            } catch (err) {
+                console.error("Error loading genres:", err);
+            }
+        }
+
+        function populateGenreDropdowns() {
+            const formSelect = document.getElementById('formMovieGenre');
+            const filterSelect = document.getElementById('genreFilterSelect');
+
+            const options = state.genres.map(g => `<option value="${g.genreId}">${g.genreName}</option>`).join('');
+
+            formSelect.innerHTML = `<option value="">Select Genre</option>` + options;
+            filterSelect.innerHTML = `<option value="">All Genres</option>` + options;
+        }
+
+        function renderGenresUI() {
+            const grid = document.getElementById('genresListGrid');
+            if (!grid) return;
+            if (state.genres.length === 0) {
+                grid.innerHTML = `<div class="col-span-2 text-center py-8 text-gray-500">No genres found. Add some above.</div>`;
+                return;
+            }
+            grid.innerHTML = state.genres.map(g => `
+                <div class="bg-cineCard p-5 rounded-xl border border-cineBorder flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-base font-bold text-white">${g.genreName}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-4">${g.genreDescription || 'No description provided'}</p>
+                    </div>
+                    <div class="flex justify-end pt-3 border-t border-cineBorder">
+                        <button onclick="deleteGenre(${g.genreId})" class="text-xs text-red-400 hover:text-red-300 flex items-center space-x-1">
+                            <i class="fa-solid fa-trash"></i><span>Delete</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadDirectors() {
+            try {
+                const res = await fetch(`${API_BASE}/api/director/getAll`);
+                if (res.ok) {
+                    state.directors = await res.json();
+                    renderDirectorsUI();
+                    populateDirectorDropdowns();
+                }
+            } catch (err) {
+                console.error("Error loading directors:", err);
+            }
+        }
+
+        function populateDirectorDropdowns() {
+            const movieDirectorSelect = document.getElementById('formMovieDirector');
+            const actorDirectorSelect = document.getElementById('actorFormDirector');
+
+            const options = state.directors.map(d => `<option value="${d.directorId}">${d.directorName} (${d.nationality || 'Global'})</option>`).join('');
+
+            movieDirectorSelect.innerHTML = `<option value="">Select Director</option>` + options;
+            actorDirectorSelect.innerHTML = `<option value="">None / Independent</option>` + options;
+        }
+
+        function renderDirectorsUI() {
+            const tbody = document.getElementById('directorsTableBody');
+            const badge = document.getElementById('directorsBadgeCount');
+            if (badge) badge.textContent = `${state.directors.length} Directors`;
+            if (!tbody) return;
+
+            if (state.directors.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-gray-500">No directors registered yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = state.directors.map(d => `
+                <tr class="hover:bg-zinc-800/40">
+                    <td class="py-3 px-4 font-semibold text-white">${d.directorName}</td>
+                    <td class="py-3 px-4 text-gray-400">${d.nationality || '-'}</td>
+                    <td class="py-3 px-4">
+                        <button onclick="deleteDirector(${d.directorId})" class="text-red-400 hover:text-red-300">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadActors() {
+            try {
+                const res = await fetch(`${API_BASE}/api/actor/getAll`);
+                if (res.ok) {
+                    state.actors = await res.json();
+                    renderActorsUI();
+                    populateActorCheckboxes();
+                }
+            } catch (err) {
+                console.error("Error loading actors:", err);
+            }
+        }
+
+        function populateActorCheckboxes(selectedIds = []) {
+            const container = document.getElementById('formMovieActorsList');
+            if (!container) return;
+
+            if (state.actors.length === 0) {
+                container.innerHTML = `<div class="col-span-3 text-xs text-gray-500 py-2">No actors registered yet. Add them in Actors tab.</div>`;
+                return;
+            }
+
+            container.innerHTML = state.actors.map(a => {
+                const checked = selectedIds.includes(a.actorId) ? 'checked' : '';
+                return `
+                    <label class="flex items-center space-x-2 text-xs text-gray-300 cursor-pointer hover:text-white">
+                        <input type="checkbox" name="movieActor" value="${a.actorId}" ${checked} class="rounded bg-zinc-800 border-cineBorder text-cineRed focus:ring-cineRed">
+                        <span>${a.actorName}</span>
+                    </label>
+                `;
+            }).join('');
+        }
+
+        function renderActorsUI() {
+            const tbody = document.getElementById('actorsTableBody');
+            const badge = document.getElementById('actorsBadgeCount');
+            if (badge) badge.textContent = `${state.actors.length} Actors`;
+            if (!tbody) return;
+
+            if (state.actors.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-gray-500">No actors registered yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = state.actors.map(a => `
+                <tr class="hover:bg-zinc-800/40">
+                    <td class="py-3 px-4 font-semibold text-white">${a.actorName}</td>
+                    <td class="py-3 px-4">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${a.gender === 'FEMALE' ? 'bg-pink-600/20 text-pink-400 border border-pink-500/30' : (a.gender === 'MALE' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-gray-600/20 text-gray-400')}">
+                            ${a.gender || 'OTHER'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-gray-400">${a.nationality || '-'}</td>
+                    <td class="py-3 px-4 text-gray-300">${a.age || '-'}</td>
+                    <td class="py-3 px-4 text-purple-400">${a.directorName || 'Independent'}</td>
+                    <td class="py-3 px-4">
+                        <button onclick="deleteActor(${a.actorId})" class="text-red-400 hover:text-red-300">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadMovies() {
+            try {
+                const res = await fetch(`${API_BASE}/api/movie/getAll`);
+                if (res.ok) {
+                    state.movies = await res.json();
+                    filterMovies();
+                    loadStats();
+                }
+            } catch (err) {
+                console.error("Error loading movies:", err);
+            }
+        }
+
+        function filterMovies() {
+            const search = document.getElementById('movieSearchInput').value.toLowerCase().trim();
+            const genreId = document.getElementById('genreFilterSelect').value;
+            const statusFilter = document.getElementById('statusFilterSelect').value;
+            const certFilter = document.getElementById('certFilterSelect').value;
+            const minRating = parseFloat(document.getElementById('ratingFilterSelect').value) || 0;
+
+            const filtered = state.movies.filter(m => {
+                const matchesTitle = m.title.toLowerCase().includes(search);
+                const matchesGenre = !genreId || (m.genreId && m.genreId.toString() === genreId);
+                const matchesStatus = !statusFilter || (m.movieStatus === statusFilter);
+                const matchesCert = !certFilter || (m.certificate === certFilter);
+                const matchesRating = (m.rating || 0) >= minRating;
+                return matchesTitle && matchesGenre && matchesStatus && matchesCert && matchesRating;
+            });
+
+            renderMoviesGrid(filtered);
+        }
+
+        function renderMoviesGrid(movies) {
+            const grid = document.getElementById('moviesGrid');
+            const placeholder = document.getElementById('noMoviesPlaceholder');
+
+            if (movies.length === 0) {
+                grid.innerHTML = '';
+                placeholder.classList.remove('hidden');
+                return;
+            }
+
+            placeholder.classList.add('hidden');
+            grid.innerHTML = movies.map(m => {
+                const castPills = (m.actorNames || []).map(actor => 
+                    `<span class="text-[10px] bg-zinc-800 text-gray-300 px-2 py-0.5 rounded-md border border-zinc-700">${actor}</span>`
+                ).join('');
+
+                // Status Pill styling
+                let statusBadge = '';
+                if (m.movieStatus === 'NOW_SHOWING') {
+                    statusBadge = `<span class="bg-emerald-600/90 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded flex items-center space-x-1"><i class="fa-solid fa-circle text-[6px] animate-pulse"></i><span>Now Showing</span></span>`;
+                } else if (m.movieStatus === 'UPCOMING') {
+                    statusBadge = `<span class="bg-amber-600/90 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">Upcoming</span>`;
+                } else if (m.movieStatus === 'ARCHIVED') {
+                    statusBadge = `<span class="bg-zinc-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">Archived</span>`;
+                } else {
+                    statusBadge = `<span class="bg-blue-600/80 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">Released</span>`;
+                }
+
+                return `
+                    <div class="bg-cineCard rounded-2xl border border-cineBorder overflow-hidden flex flex-col justify-between hover:border-zinc-500 transition-all duration-200">
+                        <!-- Top Banner -->
+                        <div class="relative bg-gradient-to-t from-zinc-900 to-zinc-800 h-36 flex items-center justify-center p-4">
+                            <i class="fa-solid fa-film text-zinc-700 text-6xl"></i>
+                            
+                            <div class="absolute top-3 right-3 flex items-center space-x-1.5">
+                                <span class="bg-black/80 text-amber-400 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-500/30">
+                                    <i class="fa-solid fa-star text-[9px] mr-1"></i>${(m.rating || 0).toFixed(1)}
+                                </span>
+                                <span class="bg-black/80 text-gray-300 px-2 py-0.5 rounded text-[11px] font-bold border border-zinc-600">
+                                    ${m.certificate || 'UA'}
+                                </span>
+                            </div>
+
+                            <div class="absolute bottom-2 left-3 flex items-center space-x-1.5">
+                                ${statusBadge}
+                                <span class="bg-red-600/90 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                                    ${m.genreName || 'Cinema'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Details -->
+                        <div class="p-5 flex-grow flex flex-col justify-between">
+                            <div>
+                                <h4 class="text-lg font-bold text-white mb-1 line-clamp-1">${m.title}</h4>
+                                <div class="flex items-center space-x-3 text-xs text-gray-400 mb-3">
+                                    <span><i class="fa-regular fa-clock mr-1 text-zinc-500"></i>${m.duration ? m.duration + 'm' : 'N/A'}</span>
+                                    <span>&bull;</span>
+                                    <span><i class="fa-solid fa-globe mr-1 text-zinc-500"></i>${m.language || 'English'}</span>
+                                </div>
+                                <p class="text-xs text-gray-400 line-clamp-2 mb-4">${m.description || 'No description provided.'}</p>
+                            </div>
+
+                            <div class="space-y-3 pt-3 border-t border-cineBorder">
+                                <div class="text-xs">
+                                    <span class="text-gray-500">Director: </span>
+                                    <span class="text-blue-400 font-semibold">${m.directorName || 'Unknown'}</span>
+                                </div>
+
+                                <div class="text-xs">
+                                    <div class="text-gray-500 mb-1">Cast:</div>
+                                    <div class="flex flex-wrap gap-1">
+                                        ${castPills || '<span class="text-zinc-600 italic">None listed</span>'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions Footer -->
+                        <div class="px-5 py-3 bg-black/40 border-t border-cineBorder flex items-center justify-between">
+                            <button onclick="editMovie(${m.movieId})" class="text-xs text-zinc-400 hover:text-white flex items-center space-x-1">
+                                <i class="fa-solid fa-pen-to-square"></i><span>Edit</span>
+                            </button>
+                            <button onclick="deleteMovie(${m.movieId})" class="text-xs text-red-500 hover:text-red-400 flex items-center space-x-1">
+                                <i class="fa-solid fa-trash-can"></i><span>Delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleMovieSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('formMovieId').value;
+            const actorCheckboxes = document.querySelectorAll('input[name="movieActor"]:checked');
+            const actorIds = Array.from(actorCheckboxes).map(cb => parseInt(cb.value));
+
+            const payload = {
+                title: document.getElementById('formMovieTitle').value.trim(),
+                duration: parseFloat(document.getElementById('formMovieDuration').value) || null,
+                language: document.getElementById('formMovieLanguage').value.trim() || null,
+                rating: parseFloat(document.getElementById('formMovieRating').value) || null,
+                movieStatus: document.getElementById('formMovieStatus').value || 'RELEASED',
+                certificate: document.getElementById('formMovieCertificate').value || 'UA',
+                genreId: parseInt(document.getElementById('formMovieGenre').value) || null,
+                directorId: parseInt(document.getElementById('formMovieDirector').value) || null,
+                actorIds: actorIds,
+                description: document.getElementById('formMovieDesc').value.trim() || null
+            };
+
+            const url = id ? `${API_BASE}/api/movie/update/${id}` : `${API_BASE}/api/movie/save`;
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    showToast(id ? 'Movie updated successfully!' : 'Movie created successfully!');
+                    resetMovieForm();
+                    switchTab('dashboard');
+                    loadMovies();
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Operation failed', 'error');
+                }
+            } catch (err) {
+                showToast('Network error while saving movie', 'error');
+            }
+        }
+
+        function editMovie(id) {
+            const movie = state.movies.find(m => m.movieId === id);
+            if (!movie) return;
+
+            document.getElementById('formMovieId').value = movie.movieId;
+            document.getElementById('formMovieTitle').value = movie.title;
+            document.getElementById('formMovieDuration').value = movie.duration || '';
+            document.getElementById('formMovieLanguage').value = movie.language || '';
+            document.getElementById('formMovieRating').value = movie.rating || '';
+            document.getElementById('formMovieStatus').value = movie.movieStatus || 'RELEASED';
+            document.getElementById('formMovieCertificate').value = movie.certificate || 'UA';
+            document.getElementById('formMovieGenre').value = movie.genreId || '';
+            document.getElementById('formMovieDirector').value = movie.directorId || '';
+            document.getElementById('formMovieDesc').value = movie.description || '';
+
+            populateActorCheckboxes(movie.actorIds || []);
+
+            document.getElementById('movieFormTitle').textContent = `Edit Movie #${movie.movieId}`;
+            document.getElementById('movieSubmitText').textContent = 'Update Movie';
+
+            switchTab('addMovie');
+        }
+
+        function resetMovieForm() {
+            document.getElementById('movieForm').reset();
+            document.getElementById('formMovieId').value = '';
+            document.getElementById('movieFormTitle').textContent = 'Add New Movie';
+            document.getElementById('movieSubmitText').textContent = 'Save Movie';
+            populateActorCheckboxes([]);
+        }
+
+        async function deleteMovie(id) {
+            if (!confirm('Are you sure you want to delete this movie?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/movie/delete/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Movie deleted successfully!');
+                    loadMovies();
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Failed to delete movie', 'error');
+                }
+            } catch (err) {
+                showToast('Error deleting movie', 'error');
+            }
+        }
+
+        async function handleActorSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                actorName: document.getElementById('actorFormName').value.trim(),
+                nationality: document.getElementById('actorFormNationality').value.trim() || null,
+                age: parseInt(document.getElementById('actorFormAge').value) || null,
+                gender: document.getElementById('actorFormGender').value || 'OTHER',
+                directorId: parseInt(document.getElementById('actorFormDirector').value) || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/actor/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    showToast('Actor added successfully!');
+                    e.target.reset();
+                    loadActors();
+                    loadStats();
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Failed to save actor', 'error');
+                }
+            } catch (err) {
+                showToast('Network error saving actor', 'error');
+            }
+        }
+
+        async function deleteActor(id) {
+            if (!confirm('Are you sure you want to delete this actor?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/actor/delete/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Actor removed!');
+                    loadActors();
+                    loadStats();
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Failed to delete actor', 'error');
+                }
+            } catch (err) {
+                showToast('Failed to delete actor', 'error');
+            }
+        }
+
+        async function handleDirectorSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                directorName: document.getElementById('directorFormName').value.trim(),
+                nationality: document.getElementById('directorFormNationality').value.trim() || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/director/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    showToast('Director added successfully!');
+                    e.target.reset();
+                    loadDirectors();
+                    loadStats();
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Failed to save director', 'error');
+                }
+            } catch (err) {
+                showToast('Network error saving director', 'error');
+            }
+        }
+
+        async function deleteDirector(id) {
+            if (!confirm('Are you sure you want to delete this director?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/director/delete/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Director removed!');
+                    loadDirectors();
+                    loadStats();
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Failed to delete director', 'error');
+                }
+            } catch (err) {
+                showToast('Failed to delete director', 'error');
+            }
+        }
+
+        async function handleGenreSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                genreName: document.getElementById('genreFormName').value.trim(),
+                genreDescription: document.getElementById('genreFormDesc').value.trim() || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/genre/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    showToast('Genre added successfully!');
+                    e.target.reset();
+                    loadGenres();
+                    loadStats();
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Failed to save genre', 'error');
+                }
+            } catch (err) {
+                showToast('Network error saving genre', 'error');
+            }
+        }
+
+        async function deleteGenre(id) {
+            if (!confirm('Are you sure you want to delete this genre?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/genre/delete/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Genre removed!');
+                    loadGenres();
+                    loadStats();
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Failed to delete genre', 'error');
+                }
+            } catch (err) {
+                showToast('Failed to delete genre', 'error');
+            }
+        }
+
+        async function handleUserRegister(e) {
+            e.preventDefault();
+            const email = document.getElementById('authUserEmail').value.trim();
+            const payload = {
+                name: document.getElementById('authUserFullName').value.trim(),
+                email: email,
+                password: document.getElementById('authUserPassword').value,
+                address: document.getElementById('authUserAddress').value.trim() || null
+            };
+
+            const btn = document.getElementById('btnRegisterUser');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Sending OTP...</span>`;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.message || 'OTP sent successfully!');
+                    document.getElementById('verifyOtpEmail').value = email;
+                    document.getElementById('verifyOtpCode').focus();
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Registration failed', 'error');
+                }
+            } catch (err) {
+                showToast('Network error registering user', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i><span>Register &amp; Send OTP</span>`;
+            }
+        }
+
+        async function handleVerifyOtp(e) {
+            e.preventDefault();
+            const payload = {
+                email: document.getElementById('verifyOtpEmail').value.trim(),
+                otp: document.getElementById('verifyOtpCode').value.trim()
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/verifyEmail`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.message || 'Email verified successfully!', 'success');
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Invalid or expired OTP', 'error');
+                }
+            } catch (err) {
+                showToast('Error verifying OTP', 'error');
+            }
+        }
+
+        async function handleResendOtp() {
+            const email = document.getElementById('verifyOtpEmail').value.trim();
+            if (!email) {
+                showToast('Please enter your email to resend OTP', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/resendOtp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+
+                if (res.ok) {
+                    showToast('A new OTP has been dispatched to your email!');
+                } else {
+                    const err = await res.text();
+                    showToast(err || 'Could not resend OTP', 'error');
+                }
+            } catch (err) {
+                showToast('Network error resending OTP', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
